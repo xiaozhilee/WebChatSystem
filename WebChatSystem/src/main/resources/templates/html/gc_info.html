@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>user_info</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="set_name()" >
+
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">群信息</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png" style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2">
+            <div id="user_info">
+                <div style="display:flex;">
+                    <img :src="user_Info.img" id="the_user_img" style="height: 60px;width: 60px;border-radius:30px ">
+                    <form id="excelUpload" method="post" style="margin-top: 20px;margin-left: 30px" enctype="multipart/form-data">
+                        <a href="javascript:void(0)" style="margin-top: 20px;margin-left: 30px" type="button" onclick="uploadPhoto()">选择图片</a>
+                        <input type="file" id="photoFile" style="display: none;" onchange="upload()">
+                    </form>
+                </div>
+                <div style="margin-top: 15px;height: 50px;display: flex">
+                    <label style="width:80px;margin-top: 5px" >群昵称：</label> <input class="form-control" id="user_name_new" type="text" :value="user_Info.gcname">
+                </div>
+                <div style="margin-top: 15px;height: 50px;display: flex">
+                    <label style="width:80px;margin-top: 5px" >群描述：</label><input class="form-control" id="user_personal_new" type="text" :value="user_Info.describtion">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-10">
+                    <input onclick="submits()" type="button" style="height:60px;margin-top:30px;margin-left:25px;width:100%;background-color:#0BD71B" class="btn btn-default" value="修改信息">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-5 col-lg-offset-10" style="margin-top:30%">
+            <div id="insert"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script>
+
+    var user_info=new Vue({
+        el:"#user_info",
+        data:{
+            user_Info:{}
+        },
+        methods:{
+            get_thisuser:function (){
+                var id=localStorage.getItem("groupchatid");
+                var personal_info_url="http://39.106.105.240:80/groupchats/"+id;
+                var token=localStorage.getItem("Token");
+                var name=localStorage.getItem("gcname");
+                document.getElementById("md_location").innerHTML=name;
+                $.ajax({
+                    type: "GET",
+                    url: personal_info_url,
+                    headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                    success: function (resData) {
+                        user_info.user_Info = resData;
+                        console.log(resData);
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            }
+        }
+    });
+
+    function submits (){
+        var token=localStorage.getItem("Token");
+        var id=localStorage.getItem("groupchatid");
+        var name=document.getElementById("user_name_new").value;
+        var per=document.getElementById("user_personal_new").value;
+        var new_gc_info_url="http://39.106.105.240:80/groupchat/info";
+        var gc={
+            "groupchatid":id,
+            "gcname":name,
+            "describtion":per
+        };
+        $.ajax({
+            type: "POST",
+            url:new_gc_info_url,
+            dataType: 'json',
+            headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+            data:Encrypt(JSON.stringify(gc)),
+            success:function(resData) {
+                localStorage.setItem("this_name",name);
+                console.log(resData.mes);
+                window.history.back(-1);
+            },
+            error:function(res){
+                alert("用户信息上传失败");
+            }
+        });
+    }
+
+    function uploadPhoto() {
+        $("#photoFile").click();
+    }
+    function upload() {
+        var token=localStorage.getItem("Token");
+        if ($("#photoFile").val() == '') {
+            return;
+        }
+        var formData = new FormData();
+        formData.append('photo', document.getElementById('photoFile').files[0]);
+        $.ajax({
+            url:"http://39.106.105.240:80/groupchat/img?gcid="+user_info.user_Info.groupchatid,
+            type:"post",
+            data: formData,
+            contentType: false,
+            processData: false,
+            headers: {'Token': token},
+            success: function(data) {
+                console.log(data);
+                document.getElementById("the_user_img").src=data;
+                $("#the_user_img").attr("src",data);
+            },
+            error:function(data) {
+                alert("上传失败")
+            }
+        });
+    }
+
+
+    user_info.get_thisuser();
+</script>
+</html>

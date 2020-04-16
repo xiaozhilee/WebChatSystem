@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebChatLogin-forget</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+
+    <style>
+        body{
+            background-image: url("/static/img/index.jpg");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <p style="position:fixed;left:530px;font-size:46px;top:230px">WebChatSystem</p>
+    <div class="row" >
+        <div class="col-md-4 col-md-offset-8" style="background-color:#2D8C74;border-radius:16px;top:90px;height:450px;weight:603px">
+            <form class="form-horizontal" role="form" style="opacity:100%">
+                <div class="form-group">
+                    <div class="col-sm-10" >
+                        <input style="height:60px;margin-top:80px;margin-left:25px" type="text" class="form-control" id="email"
+                               placeholder="邮箱">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-5">
+                        <input style="height:60px;margin-top:30px;margin-left:25px" type="text" class="form-control" id="code"
+                               placeholder="验证码">
+                    </div>
+                    <div class="col-sm-5">
+                        <input onclick="getcode(this)" type="button" style="height:60px;margin-top:30px;margin-left:25px;width:100%;background-color:#0BD71B" class="btn btn-default" value="获取验证码">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-10">
+                        <input onclick="checkcode()" type="button" style="height:60px;margin-top:30px;margin-left:25px;width:100%;background-color:#0BD71B" class="btn btn-default" value="下一步">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    var count=60;
+    function counts(val){
+        if(count==0){
+            val.value="获取验证码";
+            count=60;
+            val.removeAttribute("disabled");
+            return false;
+        }else{
+            val.setAttribute("disabled",true);
+            val.value=count+"s后重新获取";
+            count--;
+        }
+        setTimeout(function () {
+            counts(val);
+        },1000);
+    }
+    function getcode(val){
+        var mail=document.getElementById("email").value;
+        if(mail==null){
+            alert("请输入email!");
+            return false;
+        }
+        counts(val);
+        $.ajax({
+            type: "GET",
+            url:"http://39.106.105.240:80/code",
+            dataType:'json',
+            data:{
+                email:mail
+            },
+            success:function(resData) {
+                console.log(resData);
+            },
+            error:function(res){
+                alert("error");
+            }
+        });
+
+    }
+
+
+    function checkcode(){
+        var acode=document.getElementById("code").value;
+        var mail=document.getElementById("email").value;
+        if(mail==null) {
+            alert("请输入email!");
+            return false;
+        }
+        else if(code==null){
+            alert("请输入验证码!");
+            return false;
+        }
+        else{
+            $.ajax({
+                type: "GET",
+                url:"http://39.106.105.240:80/check",
+                dataType:'json',
+                data:{
+                    email:mail,
+                    code:acode
+                },
+                success:function(resData) {
+                    if(resData.mes !=null){
+                        if("验证成功"==resData.mes){
+                            console.log("验证成功");
+                            localStorage.setItem("email",mail);
+                            window.location.href="http://39.106.105.240:80/pages/repassword";
+                        }
+                        else
+                        {
+                            alert(resData.mes);
+                            return false;
+                        }
+                    }
+                }
+            });
+        }
+
+    }
+
+</script>
+
+
+</html>

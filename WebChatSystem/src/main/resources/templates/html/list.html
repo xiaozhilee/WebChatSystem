@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>list</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="openSocket(),set_name()" onbeforeunload="goodbye();">
+
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">好友</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav" onclick="to_userinfo()">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png"style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div id="list_page">
+            <div class="col-lg-8 col-xs-12 col-lg-offset-2">
+
+                <!--search_button-->
+                <div onclick="search()" class="col-lg-offset-3" style="width: 400px;border-radius: 30px;border-style: solid; border-width: 3px 3px;height: 50px;display: flex;align-items: center;justify-content: center"><img src="/img/search.png" style="height: 30px;width: 30px"></div>
+
+                <!--list_title-->
+                <div style="margin-top: 50px;display: flex;justify-content: center;align-items: center">
+                    <button type="button" onclick="friends_list()" class="btn btn-link" style="width: 50%">好友</button>
+                    <button type="button" onclick="groupchat()" class="btn btn-link" style="width: 50%">群组</button>
+                </div>
+
+                <!--list_ul_li-->
+                <div id="group_lists" style="display: block">
+                    <div v-for="(site ,index) in group" :index="index"  >
+                        <div style="height: 40px" v-on:click="getfriends(index,site.groupid)">
+                            <img src="http://39.106.105.240:80/img/sanjiao.png" :id="gensid(index)" style="height: 15px;width: 15px;">        {{site.groupname}}
+                        </div>
+                        <div :id="gen(index)" style="display: none">
+                            <div v-for="(fsite,findex) in friends" :index="findex" style="height: 90px;display: flex">
+                                <div v-on:click="to_user(findex)" style="display: flex;width: 100%">
+                                    <img :src="fsite.img" style="height: 50px;width: 50px;margin-top: 15px;border-radius: 25px">
+                                    <p v-if="fsite.name!=''&&fsite.name!=null" style="margin-left: 3%;margin-top: 25px">{{fsite.name}}</p>
+                                    <p v-else  style="margin-left: 3%;margin-top: 25px">{{fsite.email}}</p>
+                                    <p style="width: 5px;height: 5px"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a type="button" class="btn btn-default col-lg-6 col-md-6  col-xl-6 col-md-offset-3 col-lg-offset-3 col-xl-offset-3" onclick="listcreate()" style="margin-top: 50px">创建列表</a>
+                    <a type="button" class="btn btn-default col-lg-6 col-md-6  col-xl-6 col-md-offset-3 col-lg-offset-3 col-xl-offset-3" onclick="deletelist()" style="margin-top: 50px">删除列表</a>
+                </div>
+                <!--groupchat_lists-->
+               <div id="groupchat_lists" style="display: none">
+                       <div id="groupchats"  v-for="(gcsite,gcindex) in groupchats"  style="height: 90px;display: flex" >
+                           <div v-on:click="to_groupchat(gcindex)" style="display: flex;width: 100%">
+                                <img :src="gcsite.img" style="height: 50px;width: 50px;margin-top: 15px;border-radius: 25px"><p style="margin-left: 3%;margin-top: 25px">{{gcsite.gcname}}</p>
+                           </div>
+                       </div>
+                       <a type="button" class="btn btn-default col-lg-6 col-md-6  col-xl-6 col-md-offset-3 col-lg-offset-3 col-xl-offset-3" onclick="create()" style="margin-top: 50px">创建群聊</a>
+                   <a type="button" class="btn btn-default col-lg-6 col-md-6  col-xl-6 col-md-offset-3 col-lg-offset-3 col-xl-offset-3" onclick="deletegroupchat()" style="margin-top: 50px">解散群聊</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-5 col-lg-offset-10" >
+            <div id="insert"></div>
+        </div>
+    </div>
+</div>
+
+
+
+</body>
+<script>
+  var group_lists=new Vue({
+        el:'#group_lists',
+        data:{
+            count:0,
+            message:[],
+            group:[],
+            groups:[],
+            friends:[]
+        },
+        methods: {
+            get_info: function () {
+                var email = localStorage.getItem("email");
+                var token = localStorage.getItem("Token");
+                console.log(token);
+                var user_groups_url = "http://39.106.105.240:80/user/" + email + "/groups";
+                $.ajax({
+                    type: "GET",
+                    url: user_groups_url,
+                    headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                    success: function (resData) {
+                        group_lists.group = resData;
+                        console.log(resData);
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            },
+
+            getfriends:function (index,id){
+                var token = localStorage.getItem("Token");
+                if(document.getElementById("simg"+index).src==="http://39.106.105.240/img/sanjiao.png")
+                    document.getElementById("simg"+index).src="http://39.106.105.240:80/img/sanjiao(1).png";
+                else
+                    document.getElementById("simg"+index).src="http://39.106.105.240:80/img/sanjiao.png";
+
+                if(document.getElementById("group"+index).style.display=="none"){
+                    document.getElementById("group"+index).style.display="block";
+                    for(var i=0;i<group_lists.group.length;i++){
+                        if(i!==index) {
+                            document.getElementById("simg"+i).src="http://39.106.105.240/img/sanjiao.png";
+                            document.getElementById("group"+i).style.display="none";
+                        }
+                    }
+                }
+
+                else document.getElementById("group"+index).style.display="none";
+
+                const get_friends_url = "http://39.106.105.240:80/groups/" + id + "/friends";
+                $.ajax({
+                    type: "GET",
+                    url: get_friends_url,
+                    headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                    success: function (resData) {
+                        group_lists.friends= resData;
+                        console.log(group_lists.friends);
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            },
+            to_user:function(index){
+                var token = localStorage.getItem("Token");
+                localStorage.setItem("friend_email",this.friends[index].email);
+                localStorage.setItem("friend_name",this.friends[index].name);
+                window.location.href="http://39.106.105.240:80/pages/personalindex/"+token;
+            },
+            gen:function (index) {
+                return "group"+index;
+            },
+            gensid:function (index) {
+                return "simg"+index
+            }
+        },
+    });
+  group_lists.get_info();
+  function friends_list() {
+      document.getElementById("group_lists").style.display="block";
+      document.getElementById("groupchat_lists").style.display="none";
+      document.getElementById("md_location").innerHTML="好友"
+  }
+  function groupchat() {
+      document.getElementById("group_lists").style.display="none";
+      document.getElementById("groupchat_lists").style.display="block";
+      groupchat_lists.get_groupchats();
+      document.getElementById("md_location").innerHTML="群聊"
+  }
+
+
+    var groupchat_lists=new Vue({
+        el:'#groupchat_lists',
+        data:{
+            groupchats:[]
+        },
+        methods: {
+            get_groupchats(){
+                var email=localStorage.getItem("email");
+                var token=localStorage.getItem("Token");
+                var get_groupchats_url="http://39.106.105.240:80/user/"+email+"/groupchats";
+                $.ajax({
+                    type: "GET",
+                    url: get_groupchats_url,
+                    headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                    success: function (resData) {
+                        groupchat_lists.groupchats= resData;
+                        console.log("groupchats");
+                        console.log(groupchat_lists.groupchats);
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            },
+            to_groupchat :function(gcindex){
+                console.log(groupchat_lists.groupchats[gcindex].groupchatid);
+                localStorage.setItem("groupchatid",groupchat_lists.groupchats[gcindex].groupchatid);
+                localStorage.setItem("gcname",groupchat_lists.groupchats[gcindex].gcname);
+                window.location.href="http://39.106.105.240:80/pages/groupindex/";
+            }
+        },
+
+
+    })
+  function search(){
+      window.location.href="http://39.106.105.240:80/pages/search";
+  }
+
+ function to_userinfo(){
+     var token = localStorage.getItem("Token");
+     window.location.href="http://39.106.105.240:80/pages/info/"+token;
+ }
+
+  function create(){
+      window.location.href="http://39.106.105.240:80/pages/creategroupchat"
+  }
+  function listcreate() {
+    var token=localStorage.getItem("Token");
+      window.location.href="http://39.106.105.240:80/pages/group/"+token;
+  }
+  function deletelist(){
+      var token=localStorage.getItem("Token");
+      window.location.href="http://39.106.105.240:80/pages/deletelist/"+token;
+  }
+  function deletegroupchat() {
+      var token=localStorage.getItem("Token");
+      window.location.href="http://39.106.105.240:80/pages/deletegroupchat/"+token;
+  }
+</script>
+</html>

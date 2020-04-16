@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>create</title>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="set_name()" >
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">删除列表</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png" style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2">
+            <div id="user_info">
+                <div style="margin-top: 15px;height: 50px;display: flex">
+                    <label style="width:80px;margin-top: 5px" >列表名称：</label> <input class="form-control" id="gc_name" type="text"  placeholder="请输入列表名称">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-10">
+                    <input onclick="submits()" type="button" style="height:60px;margin-top:30px;margin-left:25px;width:100%;background-color:#0BD71B" class="btn btn-default" value="删除列表">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+
+<script>
+    var img;
+    function submits(){
+        var email=localStorage.getItem("email")
+        var token=localStorage.getItem("Token");
+        var name=document.getElementById("gc_name").value;
+        var url="http://39.106.105.240:80/user/"+email+"/groups/"+name;
+        $.ajax({
+            url:url,
+            type:"delete",
+            headers: {'Token': token},
+            success: function(data) {
+                alert(data.mes);
+                window.history.back(-1);
+            },
+            error:function(data) {
+                alert("删除失败");
+            }
+        });
+
+
+    }
+</script>
+
+</html>

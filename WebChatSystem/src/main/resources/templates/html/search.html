@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>search_friends</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="openSocket();set_name()" onbeforeunload="goodbye()">
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">好友</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png"style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+<div id="se">
+    <!--sou搜索-->
+    <div class="container" >
+        <div class="row">
+            <div class="col-lg-8 col-xs-12 col-lg-offset-2">
+                    <div class="col-lg-offset-3" style="width: 400px;border-radius: 30px;border-style: solid; border-width: 3px 3px;height: 50px;display: flex;align-items: center;justify-content: center">
+                        <input type="text" id="thisfemail" style="outline: none;width: 80%;height: 100%;border:0px solid">
+                        <img src="/img/search.png" style="height: 30px;width: 30px" v-on:click="getmes()">
+                    </div>
+            </div>
+        </div>
+    </div>
+    <!--信息-->
+    <div class="container" id="infos" >
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2" id="info"  style=" display:none;border-width:5px;background-image:url('http://39.106.105.240:80/img/background.jpg');background-repeat: no-repeat;width: 100%;height: 100%;">
+            <div style="width: 100%;height: 90px;margin-top: 30px">email：{{user_info.email}}</div>
+            <div style="width: 100%;height: 90px;margin-top: 30px">性别：{{user_info.sex}}</div>
+            <div style="width: 100%;height: 90px;margin-top: 30px">昵称：{{user_info.name}}</div>
+
+            <div  id="group_show" style="display: none">
+                <span>分组：</span>
+                <select id="select" class="form-control"style="width: 500px" >
+                    <option v-for="(site,index) in groups">{{site.groupname}}</option>
+                </select>
+            </div>
+
+            <input type="button"  onclick="to_mes_page" id="sub" style="height:60px;margin-top:300px;margin-left:25px;width:450px;background-color:#0BD71B" class="btn btn-default" value="发消息">
+        </div>
+        <div class="col-lg-8 col-lg-offset-2" id="gc_info"  style=" display:none;border-width:5px;background-image:url('http://39.106.105.240:80/img/background.jpg');background-repeat: no-repeat;width: 100%;height: 100%;">
+            <div style="width: 100%;height: 90px;margin-top: 30px">群ID：{{gc.groupchatid}}</div>
+            <div style="width: 100%;height: 90px;margin-top: 30px">总人数：{{gc.num}}</div>
+            <div style="width: 100%;height: 90px;margin-top: 30px">昵称：{{gc.gcname}}</div>
+            <div style="width: 100%;height: 90px;margin-top: 30px">description：{{gc.describtion}}</div>
+            <input type="button"  onclick="to_mes_page()" id="submit" style="height:60px;margin-top:300px;margin-left:25px;width:450px;background-color:#0BD71B" class="btn btn-default" value="发消息">
+        </div>
+    </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-5 col-lg-offset-10">
+            <div id="insert"></div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    var sear=new Vue({
+        el:"#se" ,
+        data:{
+            user_info:[],
+            gc:[],
+            groups:[]
+        },
+        methods:{
+            getmes:function () {
+                var user_info;
+                var token=localStorage.getItem("Token");
+                var thisfemail=document.getElementById("thisfemail").value;
+                var personal_info_url="http://39.106.105.240:80/friends/"+thisfemail;
+                if(!sear.isNumber(thisfemail)){
+                    var email = localStorage.getItem("email");
+                    var token = localStorage.getItem("Token");
+                    console.log(token);
+                    var user_groups_url = "http://39.106.105.240:80/user/" + email + "/groups";
+                    $.ajax({
+                        type: "GET",
+                        url: user_groups_url,
+                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                        success: function (resData) {
+                            sear.groups = resData;
+                            console.log(resData);
+                        },
+                        error: function (res) {
+                            alert("error");
+                        }
+                    });
+
+
+                    document.getElementById("gc_info").style.display="none";
+
+                    document.getElementById("info").style.display="block";
+                    $.ajax({
+                        type: "GET",
+                        url: personal_info_url,
+                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                        success: function (resData) {
+                            if(resData.name!=''&&resData.name!=null)
+                            document.getElementById("md_location").innerHTML=resData.name;
+                            else document.getElementById("md_location").innerHTML=resData.email;
+                            document.getElementById("infos").style.display="block";
+                            sear.user_info=resData;
+                            console.log(resData)
+                        },
+                        error: function (res) {
+                            alert("error");
+                        }
+                    });
+                    isfr_url="http://39.106.105.240:80/user/"+thisfemail+"/friend";
+                    $.ajax({
+                        type: "GET",
+                        url: isfr_url,
+                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                        success: function (resData) {
+                            console.log(resData);
+                            if(resData){
+                                document.getElementById("group_show").style.display="none";
+                                document.getElementById("sub").value="发消息";
+                                document.getElementById("sub").onclick=function(){
+                                    var token=localStorage.getItem("Token");
+                                    window.location.href="http://39.106.105.240:80/pages/personalindex/"+token;
+                                };
+                                localStorage.setItem("friend_email",sear.user_info.email);
+                                localStorage.setItem("friend_name",sear.user_info.name);
+                            }
+                            else{
+                                document.getElementById("group_show").style.display="block";
+                                document.getElementById("sub").value="加好友";
+                                document.getElementById("sub").onclick=function () {
+                                    var groups=document.getElementById("select").value;
+                                    add_url="http://39.106.105.240:80/friends/"+document.getElementById("thisfemail").value+"?groupname="+groups;
+                                    var token=localStorage.getItem("Token");
+                                    $.ajax({
+                                        type: "POST",
+                                        url: add_url,
+                                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                                        success: function (resData) {
+                                            console.log(resData);
+                                            if(resData.mes=="success") {alert("添加成功！");
+                                                document.getElementById("sub").value="发消息";
+                                                document.getElementById("sub").onclick=function(){
+                                                    var token=localStorage.getItem("Token");
+                                                    window.location.href="http://39.106.105.240:80/pages/personalindex/"+token;
+                                                };
+                                                localStorage.setItem("friend_email",sear.user_info.email);
+                                                localStorage.setItem("friend_name",sear.user_info.name);
+                                            }
+                                            else alert(resData.mes);
+                                        },
+                                        error: function (res) {
+                                            alert("error");
+                                        }
+                                    });
+                                }
+                            }
+                        },
+                        error: function (res) {
+                            alert("error");
+                        }
+                    });
+                }
+                else{
+                    document.getElementById("info").style.display="none";
+                    document.getElementById("gc_info").style.display="block";
+                    var email=localStorage.getItem("email");
+                    var personal_info_url="http://39.106.105.240:80/groupchats/"+thisfemail;
+                    $.ajax({
+                        type: "GET",
+                        url: personal_info_url,
+                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                        success: function (resData) {
+                            sear.gc = resData;
+                            console.log(resData);
+                        },
+                        error: function (res) {
+                            alert("error");
+                        }
+                    });
+                    var ismember_url="http://39.106.105.240:80/ismember/"+email+"/"+thisfemail;
+                    $.ajax({
+                        type: "GET",
+                        url: ismember_url,
+                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                        success: function (resData) {
+                            if(resData==true){
+                                document.getElementById("submit").value="发消息";
+                                document.getElementById("submit").onclick=function(){
+                                    localStorage.setItem("groupchatid",thisfemail);
+                                    localStorage.setItem("gcname",sear.gc.gcname);
+                                    window.location.href="http://39.106.105.240:80/pages/groupindex/";
+                                };
+                            }
+                            else {
+                                document.getElementById("submit").value="加入群聊";
+                                document.getElementById("submit").onclick=function () {
+                                    add_gc_url="http://39.106.105.240:80/user/"+email+"/groupchats/"+thisfemail;
+                                    var token=localStorage.getItem("Token");
+                                    $.ajax({
+                                        type: "patch",
+                                        url: add_gc_url,
+                                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                                        success: function (resData) {
+                                            console.log(resData);
+                                            document.getElementById("submit").value="发消息";
+                                            document.getElementById("submit").onclick=function(){
+                                                localStorage.setItem("groupchatid",thisfemail);
+                                                localStorage.setItem("gcname",sear.gc.gcname);
+                                                window.location.href="http://39.106.105.240:80/pages/groupindex/";
+                                            };
+                                            if(resData.mes=="success") alert("添加成功！");
+                                            else alert(resData.mes);
+                                            },
+                                        error: function (res) {
+                                            alert("error");
+                                        }
+                                    });
+                                }
+                            }
+                        },
+                        error: function (res) {
+                            alert("error");
+                        }
+                    });
+
+                }
+            },
+            isNumber:function (val) {
+                var regPos = /^\d+(\.\d+)?$/; //非负浮点数
+                var regNeg = /^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$/; //负浮点数
+                if(regPos.test(val) || regNeg.test(val)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+    }
+    });
+
+
+function to_mes_page() {
+    var token=localStorage.getItem("Token");
+    window.location.href="http://39.106.105.240:80/pages/personalindex/"+token;
+}
+function add() {
+    add_url="http://39.106.105.240:80/friends/"+document.getElementById("thisfemail").value;
+    var token=localStorage.getItem("Token");
+    $.ajax({
+        type: "POST",
+        url: add_url,
+        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+        success: function (resData) {
+            if(resData.mes!=="success") alert("你们已经是好友了！");
+            else alert(resData.mes);
+        },
+        error: function (res) {
+            alert("error");
+        }
+    });
+}
+</script>
+</html>

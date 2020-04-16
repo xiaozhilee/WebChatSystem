@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>websocket通讯</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <style>
+
+        .bubbleDiv{
+            width: 1000px;
+            margin: 0 auto;
+            height: 1000px;
+            border: 1px solid #4a4f58;
+        }
+        .bubbleItem{
+            width: 100%;
+        }
+        .bubble{
+            max-width: 655px;
+            position: relative;
+            line-height: 30px;
+            padding-left: 10px;
+            padding-top: 3px;
+            padding-bottom: 3px;
+            border-radius: 7px;
+            margin-top: 15px;
+            padding-right: 10px;
+            display: inline-block;
+        }
+        .leftBubble{
+            position: relative;
+            margin-left: 25px;
+            border: 1px solid #00b6b6;
+            background-color: #f8fdfc;
+        }
+        .leftBubble .bottomLevel{
+            position: absolute;
+            top: 10px;
+            left: -10px;
+            border-top: 10px solid #00b6b6;
+            border-left: 10px solid transparent;
+        }
+        .leftBubble .topLevel{
+            position: absolute;
+            top: 11px;
+            left: -8px;
+            border-top: 10px solid #f8fdfc;
+            border-left: 10px solid transparent;
+            z-index: 100;
+        }
+        .rightBubble{
+            position: relative;
+            margin-right: 25px;
+            float: right;
+            border: 1px solid #aaa;
+        }
+        .rightBubble .bottomLevel{
+            position: absolute;
+            bottom: 11px;
+            right: -10px;
+            border-bottom: 10px solid #aaa;
+            border-right: 10px solid transparent;
+        }
+        .rightBubble .topLevel{
+            position: absolute;
+            bottom: 12px;
+            right: -8px;
+            border-bottom: 10px solid #fff;
+            border-right: 10px solid transparent;
+            z-index: 100;
+        }
+        .clearfix:after {
+            visibility: hidden;
+            display: block;
+            font-size: 0;
+            content: " ";
+            clear: both;
+            height: 0;
+        }
+    </style>
+
+</head>
+<script>
+    var socket;
+    var Token=localStorage.getItem("Token");
+    var gcid=localStorage.getItem("groupchatid");
+    var gcname=localStorage.getItem("gcname");
+    var email=localStorage.getItem("email");
+    var on_open_lock=false;
+    function openSocket() {
+        getalles();
+        if(gcname!=''&&gcname!=null) document.getElementById("md_location").innerHTML=gcname;
+        else document.getElementById("md_location").innerHTML=gcid;
+        if(typeof(WebSocket) == "undefined") {
+            console.log("您的浏览器不支持WebSocket");
+        }else{
+            console.log("您的浏览器支持WebSocket");
+            //实现化WebSocket对象，指定要连接的服务器地址与端口  建立连接
+            //等同于socket = new WebSocket("ws://http://39.106.105.240/:8888/xxxx/im/25");
+            //var socketUrl="${request.contextPath}/im/"+$("#userId").val();
+
+            var socketUrl="http://39.106.105.240:80/MyWebsocket/"+Token;
+            socketUrl=socketUrl.replace("https","ws").replace("http","ws");
+            if(socket!=null){
+                socket.close();
+                socket=null;
+            }
+            if(on_open_lock===false){
+                on_open_lock=true;
+                socket = new WebSocket(socketUrl);
+
+            }
+            //打开事件
+            socket.onopen = function() {
+                console.log("websocket已打开");
+                on_open_lock=false;
+                //socket.send("这是来自客户端的消息" + location.href + new Date());
+            };
+            //获得消息事件
+            socket.onmessage = function(msg) {
+                console.log(msg.data);
+                var mess=JSON.parse(msg.data);
+                //发现消息进入    开始处理前端触发逻辑
+                var touserid=mess.touserid;
+                fromuseremail=mess.fromuseremail;
+                var mes=Decrypt(mess.mestext);
+                if(touserid===gcid) {
+                    if(fromuseremail!==email)
+                    $("#mes").before(
+                        "<div class=\"bubbleItem\">\n" +"<p>"+fromuseremail+"</p>"+
+                        "     <span class=\"bubble leftBubble\">\n" +
+                        mes +
+                        "                            <span class=\"bottomLevel\"></span>\n" +
+                        "                            <span class=\"topLevel\"></span>\n" +
+                        "                        </span>\n" +
+                        "                    </div>"
+                    );
+                    scroll();
+                }
+            };
+            //关闭事件
+            socket.onclose = function() {
+                console.log("websocket已关闭");
+            };
+            //发生了错误事件
+            socket.onerror = function() {
+                if(on_open_lock===false) {
+                    on_open_lock=true;
+                    openSocket();
+                }
+                console.log("websocket发生了错误");
+            }
+        }
+    }
+    function sendMessage() {
+        var email=localStorage.getItem("email");
+        if(typeof(WebSocket) == "undefined") {
+            console.log("您的浏览器不支持WebSocket");
+        }else {
+            let content=document.getElementById("contentText").value
+            let mes=Encrypt(content);
+            var mesg={"fromuseremail":email,"touseremail":null,"mestype":1,"mestext":mes,"touserid":gcid};
+            let mess=JSON.stringify(mesg);
+            console.log(mess);
+            console.log("您的浏览器支持WebSocket");
+            if(this.socket==null||this.socket.readyState!=1) {
+                openSocket();
+            }
+            if(this.socket.readyState===1) {
+                socket.send(mess);
+                $("#mes").before(
+                    "<div class=\"bubbleItem clearfix\">  <span style=\"font-family: Arial, Helvetica, sans-serif;\"><!--右侧的泡泡--></span>\n" +
+                    "                        <span class=\"bubble rightBubble\">\n" +
+                    content +
+                    "                            <span class=\"bottomLevel\"></span>\n" +
+                    "                            <span class=\"topLevel\"></span>\n" +
+                    "                        </span>\n" +
+                    "                    </div>"
+                );
+                scroll();
+                document.getElementById("contentText").value="";
+            }
+            else {
+                alert("请等待建立连接");
+            }
+        }
+    }
+    function goodbye() {
+        if(this.socket!==null&&this.socket.readyState===1)
+            this.socket.onclose();
+    }
+
+
+    function getalles() {
+        var email=localStorage.getItem("email");
+        let get_mes_url="http://39.106.105.240:80/groupchats/"+gcid+"/messages";
+        $.ajax({
+            type: "GET",
+            url: get_mes_url,
+            headers: {'Content-Type': 'application/json;charset=utf8', 'Token': Token},
+            success: function (resData) {
+                console.log(resData);
+                for(let i=0;i<resData.length;i++){
+                    if(resData[i].fromuseremail===email) {
+                        $("#mes").before(
+                            "<div class=\"bubbleItem clearfix\">   <span style=\"font-family: Arial, Helvetica, sans-serif;\"><!--右侧的泡泡--></span>\n" +
+                            "                        <span class=\"bubble rightBubble\">\n" +
+                            Decrypt(resData[i].mestext) +
+                            "                            <span class=\"bottomLevel\"></span>\n" +
+                            "                            <span class=\"topLevel\"></span>\n" +
+                            "                        </span>\n" +
+                            "                    </div>"
+                        );
+                    }
+                    else {
+                        $("#mes").before(
+                            "<div class=\"bubbleItem\">\n" +"<p>"+resData[i].fromuseremail+"</p>"+
+                            "     <span class=\"bubble leftBubble\">\n" +
+                            Decrypt(resData[i].mestext) +
+                            "                            <span class=\"bottomLevel\"></span>\n" +
+                            "                            <span class=\"topLevel\"></span>\n" +
+                            "                        </span>\n" +
+                            "                    </div>"
+                        );
+
+                    }
+                }
+                $("#mes").before("<p class='text-center'>"+resData[resData.length-1].mestime+"</p>");
+                scroll();
+            },
+            error: function (res) {
+                alert("error");
+            }
+        });
+    }
+    function scroll(){
+        var scroll=document.getElementById("scrolls");
+        scroll.scrollTop=scroll.scrollHeight;
+    }
+</script>
+<body onload="openSocket(),set_name()" onbeforeunload="goodbye()">
+
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">群聊</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png"style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2" style="height: 850px;border:3px solid gray;">
+            <div style="height: 700px;}">
+                <div id="scrolls" data-spy="scroll" data-target="#navbar-example" data-offset="0"
+                     style="height:700px;overflow:auto; position: relative;">
+                    <div id="mes" style="float: left"></div>
+                </div>
+            </div>
+            <div class="input-group mb-3" style="display: flex">
+                <input type="text" class="form-control"  id="contentText" style="height: 40px">
+                <button onclick="sendMessage()" style="height: 40px;width: 100px">发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>

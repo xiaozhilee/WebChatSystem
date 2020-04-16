@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebChatLogin</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+
+    <style>
+        body{
+            background-image: url("/img/index.jpg");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <p style="position:fixed;left:530px;font-size:46px;top:230px">WebChatSystem</p>
+    <div class="row" >
+        <div class="col-md-4 col-md-offset-8" style="background-color:#2D8C74;border-radius:16px;top:90px;height:450px;weight:603px">
+            <form class="form-horizontal" role="form" style="opacity:100%">
+                <div class="form-group">
+                    <div class="col-sm-10" >
+                        <input style="height:60px;margin-top:80px;margin-left:25px" type="text" class="form-control" id="name"
+                               placeholder="邮箱/账号">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-10">
+                        <input style="height:60px;margin-top:30px;margin-left:25px" type="password" class="form-control" id="password"
+                               placeholder="密码">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-10">
+                        <input onclick="submits()" type="button" style="height:60px;margin-top:30px;margin-left:25px;width:100%;background-color:#0BD71B" class="btn btn-default" value="登录">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-10 col-sm-offset-7">
+                        <a href="http://39.106.105.240:80/pages/forget" style="color:white;">忘记密码？</a>
+                    </div>
+                    <div class="col-sm-10 col-sm-offset-7">
+                        <a href="http://39.106.105.240:80/pages/regist" style="color:white;">还没账号？</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    function submits(){
+        var username=document.getElementById("name").value;
+        localStorage.setItem("email",username);
+        console.log(username);
+        var pass=document.getElementById("password").value;
+        var password=Encrypt(pass);
+        console.log(password);
+        $.ajax({
+            type: "GET",
+            url:"/login",
+            dataType:'json',
+            data:{
+                mail:username,
+                password:password
+            },
+            success:function(resData) {
+                var res=JSON.parse(Decrypt(resData));
+                console.log(res);
+                if("登陆成功！"===res.message)
+                {
+                    localStorage.setItem("Token",res.Token);
+                    localStorage.setItem("this_name",res.name);
+                    localStorage.setItem("this_img",res.img);
+                    localStorage.setItem("id",res.id);
+                    console.log(res.Token);
+                    window.location.href="http://39.106.105.240:80/pages/list/"+res.Token;
+                }
+                else {
+                    alert(res.message);
+                    return false;
+                }
+            },
+            error:function(res){
+                alert("error");
+            }
+        });
+
+    }
+
+
+</script>
+
+
+</html>

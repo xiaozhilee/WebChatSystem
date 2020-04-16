@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>create</title>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="set_name()" >
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">创建群聊</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png" style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2">
+            <div id="user_info">
+
+                <div style="display:flex;">
+                    <img src="#" id="the_user_img" style="height: 60px;width: 60px;border-radius:30px ">
+                    <form id="excelUpload" method="post" style="margin-top: 20px;margin-left: 30px" enctype="multipart/form-data">
+                        <a href="javascript:void(0)" style="margin-top: 20px;margin-left: 30px" type="button" onclick="uploadPhoto()">选择图片</a>
+                        <input type="file" id="photoFile" style="display: none;" onchange="upload()">
+                    </form>
+                </div>
+                <div style="margin-top: 15px;height: 50px;display: flex">
+                    <label style="width:80px;margin-top: 5px" >群昵称：</label> <input class="form-control" id="gc_name" type="text"  placeholder="请输入群昵称">
+                </div>
+                <div style="margin-top: 15px;height: 50px;display: flex">
+                    <label style="width:80px;margin-top: 5px" >群描述：</label> <input class="form-control" id="gc_des" type="text"  placeholder="请输入群描述">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-10">
+                    <input onclick="submits()" type="button" style="height:60px;margin-top:30px;margin-left:25px;width:100%;background-color:#0BD71B" class="btn btn-default" value="创建群聊">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+
+<script>
+var img;
+    function uploadPhoto() {
+        $("#photoFile").click();
+    }
+    function upload() {
+        var token=localStorage.getItem("Token");
+        if ($("#photoFile").val() == '') {
+            return;
+        }
+        var str=$("#photoFile").val();
+        var arr=str.split('\\');//注split可以用字符或字符串分割
+        var my=arr[arr.length-1];//这就是要取得的图片名称
+        var formData = new FormData();
+        formData.append('photo', document.getElementById('photoFile').files[0]);
+        $.ajax({
+            url:"http://39.106.105.240:80/groupchat/img?gcid=-1",
+            type:"post",
+            data: formData,
+            contentType: false,
+            processData: false,
+            headers: {'Token': token},
+            success: function(data) {
+                console.log(data);
+                img=data;
+                document.getElementById("the_user_img").src=img;
+            },
+            error:function(data) {
+                alert(data);
+            }
+        });
+    }
+    function submits(){
+        var name=document.getElementById("gc_name").value;
+        var des=document.getElementById("gc_des").value;
+        var token=localStorage.getItem("Token");
+        if(img==null||img==="") img="http://39.106.105.240:80/img/qunzu.png";
+        var gc={
+            "gcname":name,
+            "describtion":des,
+            "img":img
+        };
+        $.ajax({
+            url:"http://39.106.105.240:80/groupchats",
+            type:"post",
+            data: Encrypt(JSON.stringify(gc)),
+            headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+            success: function(data) {
+                console.log(data);
+                var token=localStorage.getItem("Token")
+                window.location.href="http://39.106.105.240:80/pages/list/"+token;
+            },
+            error:function(data) {
+                alert("创建失败");
+            }
+        });
+
+
+    }
+</script>
+
+</html>

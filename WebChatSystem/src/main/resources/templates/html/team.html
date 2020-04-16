@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>team</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="set_name()">
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">群成员</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png"style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2" id="user">
+            <div id="groupchat_lists">
+                <div id="groupchats"  v-for="(gcsite,gcindex) in users"  style="height: 90px;display: flex" >
+                    <div style="display: flex;width: 100%">
+                        <img :src="gcsite.img" style="height: 50px;width: 50px;margin-top: 15px;border-radius: 25px">
+                        <div>
+                            <p style="margin-left: 3%;">{{gcsite.name}}</p>
+                            <button :index="gcindex" class="btn btn-default" v-on:click="get_user.deleteuser(gcsite.email)" style="display: flex;height: 30px;">踢出群聊</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div><input style="display: none" id="add_user_email" class="form-control" > </div>
+            <div><button onclick="add_users()" type="button" id="add_user" style="height:60px;margin-top:15px;margin-left:25px;width:450px;background-color:#0BD71B" class="btn btn-default" value="new">拉人进群</button></div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+
+<script>
+    var get_user=new Vue({
+        el:"#user",
+        data:{
+            users:[],
+        },
+        methods:{
+            get:function () {
+                var id = localStorage.getItem("groupchatid");
+                var get_users_url="http://39.106.105.240:80/groupchats/"+id+"/user";
+                var token=localStorage.getItem("Token");
+                $.ajax({
+                        type: "GET",
+                        url: get_users_url,
+                        headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                        success: function (resData) {
+                            get_user.users= resData;
+                            console.log(resData);
+                        },
+                        error: function (res) {
+                            alert("error");
+                        }
+                    });
+            },
+            deleteuser:function (email){
+                var id = localStorage.getItem("groupchatid");
+                var token=localStorage.getItem("Token");
+                var delete_user_url="http://39.106.105.240:80/groupchats/"+id+"/user/"+email;
+                $.ajax({
+                    type: "PATCH",
+                    url: delete_user_url,
+                    headers: {'Token': token},
+                    success: function (resData) {
+                        alert(resData.mes);
+                        console.log(resData);
+                        location.reload();
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            }
+        }
+    })
+    get_user.get();
+    function add_users(){
+        document.getElementById("add_user_email").style.display="block";
+        document.getElementById("add_user").onclick=function () {
+            var id = localStorage.getItem("groupchatid");
+            var email=document.getElementById("add_user_email").value;
+            if(email==null){
+                alert("请输入对方email");
+                location.reload();
+            }
+            var token=localStorage.getItem("Token");
+            var add_user_url="http://39.106.105.240:80/user/"+email+"/groupchats/"+id;
+            $.ajax({
+                type: "PATCH",
+                url: add_user_url,
+                headers: {'Token': token},
+                success: function (resData) {
+                    alert(resData.mes);
+                    console.log(resData);
+                    location.reload();
+                },
+                error: function (res) {
+                    alert("error");
+                }
+            });
+        }
+
+    }
+</script>
+</html>

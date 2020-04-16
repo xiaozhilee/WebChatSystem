@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-bind="http://www.w3.org/1999/xhtml" xmlns:http="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>personalindex</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src = "/js/aes.js"></script>
+    <script type="text/javascript" src = "/js/crypto-js.js"></script>
+    <script type="text/javascript" src = "/js/pad-zeropadding.js"></script>
+    <script type="text/javascript" src = "/js/Myjs.js"></script>
+    <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+</head>
+<body onload="openSocket();set_name()" onbeforeunload=" goodbye()">
+
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid text-center" >
+        <div class="navbar-header navbar-left">
+            <img class="navbar-brand" src="/img/chat.png">
+            <p class="navbar-brand">WebChatSystem</p>
+        </div>
+        <div>
+            <p  class="navbar-text " id="md_location">好友</p>
+        </div>
+        <div class="navbar-right" style="display: flex;width: 125px">
+            <div class="nav navbar-nav">
+                <img id="user_img" src="/img/user.png" style="width: 30px;height: 30px;margin-left: 20%">
+                <p id="user_name">chatuser</p>
+            </div>
+            <div  class="nav navbar-text"style="display: flex;align-items: center;margin-left: 2%;">
+                <div id="status"><img src="/img/online.png"style="width: 20px;height: 20px">在线</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2" id="info"  style="border-width:5px;background-image:url('http://39.106.105.240:80/img/background.jpg');background-repeat: no-repeat;width: 100%;height: 100%;">
+            <div style="width: 100%;height: 90px;margin-top: 30px">email：{{user_info.email}}</div>
+            <div v-if="user_info.sex==0" style="width: 100%;height: 90px;margin-top: 30px">性别：男</div>
+            <div v-else-if="user_info.sex==1" style="width: 100%;height: 90px;margin-top: 30px">性别：女</div>
+            <div v-else style="width: 100%;height: 90px;margin-top: 30px">性别：null</div>
+            <div  style="width: 100%;height: 90px;margin-top: 30px">昵称：{{user_info.name}}</div>
+            <div  id="group_show" style="display: none">
+
+                <div>
+                <span>分组：</span>
+                <select id="select" class="form-control"style="width: 500px" >
+                    <option v-for="(site,index) in select.the_group">{{site.groupname}}</option>
+                </select>
+                </div>
+            </div>
+            <div>
+                <input onclick="deletesubmit()" type="button" style="height:60px;margin-top:300px;margin-left:25px;width:200px;background-color:#0BD71B" class="btn btn-default" value="删除好友">
+                <input onclick="newgroup()" id="newgrops" type="button" style="height:60px;margin-top:300px;margin-left:50px;width:200px;background-color:#0BD71B" class="btn btn-default" value="修改分组">
+            </div>
+            <div><button onclick="submits()" type="button" style="height:60px;margin-top:15px;margin-left:25px;width:450px;background-color:#0BD71B" class="btn btn-default" value="登录">发消息</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-5 col-lg-offset-10">
+            <div id="insert"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script>
+    var info=new Vue({
+        el:"#info",
+        data:{
+            user_info:{}
+        },
+        methods:{
+            get(){
+                var femail=localStorage.getItem("friend_email");
+                var name=localStorage.getItem("friend_name");
+                var personal_info_url="http://39.106.105.240:80/friends/"+femail;
+                var token=localStorage.getItem("Token");
+                if(name!=''&&name!=null)
+                    document.getElementById("md_location").innerHTML=name;
+                else document.getElementById("md_location").innerHTML=femail;
+                $.ajax({
+                    type: "GET",
+                    url: personal_info_url,
+                    headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                    success: function (resData) {
+                        info.user_info = resData;
+                        console.log(resData);
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            }
+        }
+    });
+    info.get();
+    function submits() {
+        var token=localStorage.getItem("Token");
+        window.location.href="http://39.106.105.240:80/pages/mestest/"+token;
+
+    }
+    function  deletesubmit() {
+        var email=localStorage.getItem("email");
+        var token=localStorage.getItem("Token");
+        var femail=localStorage.getItem("friend_email");
+        var delete_friend_url="http://39.106.105.240:80/user/"+email+"/friends/"+femail;
+        $.ajax({
+            type: "DELETE",
+            url: delete_friend_url,
+            headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+            success: function (resData) {
+                console.log(resData);
+                alert(resData.mes);
+                window.history.back(-1);
+            },
+            error: function (res) {
+                alert("error");
+            }
+        });
+    }
+
+
+
+    var select=new Vue({
+        el:"#group_show",
+        data:{
+            the_group:{}
+        },
+        methods:{
+            get:function () {
+                var email = localStorage.getItem("email");
+                var token = localStorage.getItem("Token");
+                console.log(token);
+                var user_groups_url = "http://39.106.105.240:80/user/" + email + "/groups";
+                $.ajax({
+                    type: "GET",
+                    url: user_groups_url,
+                    headers: {'Content-Type': 'application/json;charset=utf8', 'Token': token},
+                    success: function (resData) {
+                        select.the_group = resData;
+                        console.log(resData);
+                    },
+                    error: function (res) {
+                        alert("error");
+                    }
+                });
+            }
+        }
+    });
+    select.get();
+    function newgroup(){
+
+        document.getElementById("group_show").style.display="block";
+        document.getElementById("newgrops").value="确认修改";
+        document.getElementById("newgrops").onclick=function () {
+            var email=localStorage.getItem("email");
+            var femail=localStorage.getItem("friend_email");
+
+            var new_group_url="http://39.106.105.240:80/user/"+femail+"/groups";
+            var newgroup=document.getElementById("select").value;
+            var token=localStorage.getItem("Token");
+            $.ajax({
+                type: "PATCH",
+                url: new_group_url,
+                headers: {'Token': token},
+                data:{
+                    "groupname":newgroup
+                },
+                success: function (resData) {
+                    console.log(resData);
+                    alert(resData.mes);
+                    document.getElementById("group_show").style.display="none";
+                    document.getElementById("newgrops").value="修改分组";
+                    location.reload();
+                },
+                error: function (res) {
+                    alert("error");
+                }
+            });
+        }
+    }
+</script>
+</html>
